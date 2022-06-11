@@ -135,4 +135,4 @@ class Tacotron2TTS:
 
         print("Playing response...")
 
-        sounddevice.play(wav, samplerate=22050, device=26, blocking=True)
+        sounddevice.play(wav, samplerate=22050, device=16, blocking=True)

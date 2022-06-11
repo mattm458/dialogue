@@ -8,7 +8,7 @@ class SRAudioIn:
         self.r = sr.Recognizer()
 
     def __call__(self, context):
-        with sr.Microphone(device_index=18, sample_rate=32000) as source:
+        with sr.Microphone(device_index=16, sample_rate=32000) as source:
             print("Listening...")
             self.r.adjust_for_ambient_noise(source)
             audio = self.r.listen(source)
