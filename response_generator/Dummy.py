@@ -4,4 +4,4 @@ class DummyResponseGenerator:
 
     def __call__(self, context):
         context.add_response_text(self.response)
-        return self.response
+        print(f"Dummy: {self.response}")

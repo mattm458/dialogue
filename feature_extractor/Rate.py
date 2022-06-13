@@ -37,7 +37,7 @@ class RateFeatureExtractor:
         rate = (
             sum([self._nsyl(w) for w in context.get_latest_user_text().split(" ")])
             * 60
-            / context.get_latest_feature_value('duration')
+            / context.get_latest_feature_value("duration")
         )
 
-        context.add_feature_value('rate', rate)
+        context.add_feature_value("rate", rate)

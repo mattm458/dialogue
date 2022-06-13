@@ -108,26 +108,26 @@ def get_features(sound):
 
     if pitch is not None:
         pitch_mean = (
-            parselmouth.praat.call(pitch, "Get mean", 0.0, 0.0, "logHertz")
+            parselmouth.praat.call(pitch, "Get mean", 0.0, 0.0, "hertz")
             if pitch
             else None
         )
 
         pitch_95 = parselmouth.praat.call(
-            pitch, "Get quantile", 0.0, 0.0, 0.95, "logHertz"
+            pitch, "Get quantile", 0.0, 0.0, 0.95, "hertz"
         )
         pitch_05 = parselmouth.praat.call(
-            pitch, "Get quantile", 0.0, 0.0, 0.05, "logHertz"
+            pitch, "Get quantile", 0.0, 0.0, 0.05, "hertz"
         )
-        pitch_range = pitch_95 - pitch_05
 
     return {
         "pitch_mean": pitch_mean,
-        "pitch_range": pitch_range,
-        "intensity_mean": math.log(intensity_mean),
-        "jitter": math.log(jitter),
-        "shimmer": math.log(shimmer),
-        "nhr": math.log(float(nhr)),
+        "pitch_95": pitch_95,
+        "pitch_05": pitch_05,
+        "intensity_mean": intensity_mean,
+        "jitter": jitter,
+        "shimmer": shimmer,
+        "nhr": float(nhr),
         "duration": sound.duration,
     }
 

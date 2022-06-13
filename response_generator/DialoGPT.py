@@ -2,7 +2,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 class DialoGPTResponseGenerator:
-    def __init__(self, size="large"):
+    def __init__(self, size="medium"):
         self.tokenizer = AutoTokenizer.from_pretrained(f"microsoft/DialoGPT-{size}")
         self.model = AutoModelForCausalLM.from_pretrained(
             f"microsoft/DialoGPT-{size}"
@@ -29,5 +29,6 @@ class DialoGPTResponseGenerator:
         )
 
         context.add_response_text(response)
+        print(f"DialoGPT: {response}")
 
         return response

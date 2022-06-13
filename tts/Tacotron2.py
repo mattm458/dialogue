@@ -1,32 +1,21 @@
 import sys
 
-sys.path.append("../tacotron2")
-
 import librosa
 import numpy as np
 import pytorch_lightning as pl
 import sounddevice
 import torch
-from model.tacotron2 import Tacotron2
+from tts.tacotron2.tacotron2 import Tacotron2
 from sklearn.preprocessing import OrdinalEncoder
+import math
 
 ALLOWED_CHARS = "!'(),.:;? \\-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
-FEATURES = [
-    "pitch_mean",
-    "pitch_range",
-    "intensity_mean",
-    "jitter",
-    "shimmer",
-    "nhr",
-    "duration",
-]
-
 
 class Tacotron2TTS:
-    def __init__(self):
+    def __init__(self, checkpoint_path, device_index):
         self.tacotron2 = Tacotron2.load_from_checkpoint(
-            checkpoint_path="tts/tacotron2/tacotron-features-all-v2-22040.ckpt",
+            checkpoint_path=checkpoint_path,
             lr=1e-4,
             weight_decay=0,
             num_chars=len(ALLOWED_CHARS) + 1,
@@ -48,6 +37,8 @@ class Tacotron2TTS:
         self.encoder = OrdinalEncoder()
         self.encoder.fit([[x] for x in list(ALLOWED_CHARS) + [self.end_token]])
 
+        self.device_index = device_index
+
     def _translate(self, value, leftMin, leftMax, rightMin, rightMax):
         # Figure out how 'wide' each range is
         leftSpan = leftMax - leftMin
@@ -63,21 +54,22 @@ class Tacotron2TTS:
         text = context.get_latest_response_text()
 
         feature_vector = []
-        for feat_name in FEATURES:
-            f = np.array(context.get_feature_values(feat_name))
-            print(feat_name, f)
 
-            F_std = f.std()
-            F_med = np.median(f)
-            F_min = F_med - (3 * F_std)
-            F_max = F_med + (3 * F_std)
-
-            if F_std == 0:
-                f_val = 0.
+        for feature in [
+            "pitch_mean",
+            "pitch_range",
+            "intensity_mean",
+            "jitter",
+            "shimmer",
+            "nhr",
+            "duration",
+        ]:
+            if context.has_entrained_feature_value(feature):
+                feature_vector.append(
+                    context.get_entrained_feature_value(feature)
+                )
             else:
-                f_val = self._translate(f[-1], F_min, F_max, -1, 1)
-            
-            feature_vector.append(f_val)
+                feature_vector.append(0.0)
 
         print("Generating response...")
         print("Using feature vector " + str(feature_vector))
@@ -135,4 +127,4 @@ class Tacotron2TTS:
 
         print("Playing response...")
 
-        sounddevice.play(wav, samplerate=22050, device=16, blocking=True)
+        sounddevice.play(wav, samplerate=22050, device=self.device_index, blocking=True)

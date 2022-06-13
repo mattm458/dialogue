@@ -1,6 +1,6 @@
 import speech_recognition as sr
 
-class SRASR:
+class SphinxASR:
     def __init__(self):
         self.r = sr.Recognizer()
 

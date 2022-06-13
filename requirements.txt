@@ -2,11 +2,13 @@
 Hyphenate==1.1.0
 librosa==0.9.1
 nltk==3.7
+pocketsphinx==0.1.15
 praat-parselmouth==0.4.1
 pytorch_lightning==1.6.4
-pyttsx3 -e git+https://github.com/nateshmbhat/pyttsx3.git@5d3755b060a980f48fcaf81df018dd06cbd17a8f
+git+https://github.com/nateshmbhat/pyttsx3.git@5d3755b060a980f48fcaf81df018dd06cbd17a8f#egg-package=pyttsx3
 scikit_learn==1.1.1
 sounddevice==0.4.4
 SpeechRecognition==3.8.1
 transformers==4.19.4
 torch==1.11.0+cu113
+pyaudio==0.2.11

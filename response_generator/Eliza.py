@@ -8,5 +8,5 @@ class ElizaResponseGenerator:
     def __call__(self, context):
         response = self.eliza.respond(context.get_latest_user_text())
         context.add_response_text(response)
-        print(f'Eliza response: {response}')
+        print(f'Eliza: {response}')
         return response
