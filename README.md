@@ -248,8 +248,7 @@ python main.py \
 ```
 
 
-**Microphone input with the usual feature extraction suite, with a matching entrainment strategy. The mapping configuration is set up without a fallback speaker configuration, so Tacotron will respond in a neutral tone until the mapper accumulates enough samples to transform your vocal range into LJSpeech's vocal range.
-**
+**Microphone input with the usual feature extraction suite, with a matching entrainment strategy. The mapping configuration is set up without a fallback speaker configuration, so Tacotron will respond in a neutral tone until the mapper accumulates enough samples to transform your vocal range into LJSpeech's vocal range.**
 ```
 python main.py \
 	--audio-in sr \
