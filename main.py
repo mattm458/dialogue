@@ -60,7 +60,13 @@ if __name__ == "__main__":
         type=str,
         default="neutral",
         help="The entrainment strategy to use in determining speech acoustic/prosodic features.",
-        choices=["neutral", "matching"],
+        choices=["neutral", "matching", "neural"],
+    )
+
+    entrainment_strategy_parser.add_argument(
+        "--neural-entrainment-ckpt",
+        required=False,
+        help="The path to a trained neural entrainment checkpoint. Required if --entrainment-strategy=neural.",
     )
 
     feature_extractor_parser = parser.add_argument_group("Feature extractor")
@@ -133,35 +139,54 @@ if __name__ == "__main__":
     )
 
     transformer_parser = parser.add_argument_group(
-        "Transform entrained values for the TTS."
+        "Transform recorded values for an entrainment strategy."
     )
     transformer_parser.add_argument(
         "--transformers",
         required=False,
         default=["passthrough"],
         help="Transform modules to invoke prior to passing final entrained values to the TTS.",
-        choices=["passthrough", "map", "pitch_range", "log", "normalize"],
+        choices=["passthrough", "pitch_range", "log", "normalize", "normalize_user"],
         nargs="+",
-    )
-    transformer_parser.add_argument(
-        "--map-transformer-target-config",
-        required=False,
-        default=None,
-        help="The path to a JSON file containing the target vocal range. Required for the Map transformer.",
-        type=str,
-    )
-    transformer_parser.add_argument(
-        "--map-transformer-speaker-config",
-        required=False,
-        default=None,
-        help="The path to a JSON file containing the speaker vocal range. Optional for the Map transformer. If not supplied, the Map transformer will use a neutral tone until a suitable range can be determined from recorded vocal samples. If given, the map transformer will use the speaker config until a suitable range can be determined from vocal samples.",
-        type=str,
     )
     transformer_parser.add_argument(
         "--normalize-transformer-config",
         required=False,
         default=None,
         help="The path to a JSON file containing a vocal range to normalize within. Required for the Normalize transformer.",
+        type=str,
+    )
+
+    entrainment_transformer_parser = parser.add_argument_group(
+        "Transform entrained values for the TTS."
+    )
+    entrainment_transformer_parser.add_argument(
+        "--entrainment-transformers",
+        required=False,
+        default=["passthrough"],
+        help="Transform modules to invoke prior to passing final entrained values to the TTS.",
+        choices=["passthrough", "map", "expand"],
+        nargs="+",
+    )
+    entrainment_transformer_parser.add_argument(
+        "--map-transformer-target-config",
+        required=False,
+        default=None,
+        help="The path to a JSON file containing the target vocal range. Required for the Map transformer.",
+        type=str,
+    )
+    entrainment_transformer_parser.add_argument(
+        "--map-transformer-speaker-config",
+        required=False,
+        default=None,
+        help="The path to a JSON file containing the speaker vocal range. Optional for the Map transformer. If not supplied, the Map transformer will use a neutral tone until a suitable range can be determined from recorded vocal samples. If given, the map transformer will use the speaker config until a suitable range can be determined from vocal samples.",
+        type=str,
+    )
+    entrainment_transformer_parser.add_argument(
+        "--expand-transformer-target-config",
+        required=False,
+        default=None,
+        help="The path to a JSON file containing the target vocal range. Required for the Expand transformer.",
         type=str,
     )
 
@@ -203,6 +228,12 @@ if __name__ == "__main__":
         from entrainment_strategy.Matching import MatchingEntrainmentStrategy
 
         entrainment_strategy = MatchingEntrainmentStrategy()
+    elif args.entrainment_strategy == "neural":
+        from entrainment_strategy.Neural import NeuralEntrainmentStrategy
+
+        entrainment_strategy = NeuralEntrainmentStrategy(
+            checkpoint_path=args.neural_entrainment_ckpt, max_turns=args.max_turns
+        )
     else:
         raise Exception("Invalid entrainment strategy")
 
@@ -268,13 +299,15 @@ if __name__ == "__main__":
         raise Exception("Invalid TTS")
 
     transformers = []
+    entrainment_transformers = []
 
     if args.transformers is not None:
-        from transformer.Passthrough import PassthroughTransformer
-        from transformer.Map import MapTransformer
         from transformer.Log import LogTransformer
-        from transformer.PitchRange import PitchRangeTransformer
+        from transformer.Map import MapTransformer
         from transformer.Normalize import NormalizeTransformer
+        from transformer.NormalizeUser import NormalizeUserTransformer
+        from transformer.Passthrough import PassthroughTransformer
+        from transformer.PitchRange import PitchRangeTransformer
 
         for transformer in args.transformers:
             if transformer == "passthrough":
@@ -294,8 +327,38 @@ if __name__ == "__main__":
                 transformers.append(
                     NormalizeTransformer(config=args.normalize_transformer_config)
                 )
+            elif transformer == "normalize_user":
+                transformers.append(NormalizeUserTransformer())
             else:
                 raise Exception("Invalid transformer")
+
+    if args.entrainment_transformers is not None:
+        from entrainment_transformer.Map import (
+            MapTransformer as EntrainmentMapTransformer,
+        )
+        from entrainment_transformer.Passthrough import (
+            PassthroughTransformer as EntrainmentPassthroughTransformer,
+        )
+        from entrainment_transformer.Expand import (
+            ExpandTransformer as EntrainmentExpandTransformer,
+        )
+
+        for transformer in args.entrainment_transformers:
+            if transformer == "passthrough":
+                entrainment_transformers.append(EntrainmentPassthroughTransformer())
+            elif transformer == "map":
+                entrainment_transformers.append(
+                    EntrainmentMapTransformer(
+                        args.map_transformer_target_config,
+                        args.map_transformer_speaker_config,
+                    )
+                )
+            elif transformer == "expand":
+                entrainment_transformers.append(
+                    EntrainmentExpandTransformer(args.expand_transformer_target_config)
+                )
+            else:
+                raise Exception(f"Invalid transformer {transformer}")
 
     print("Starting...")
 
@@ -305,13 +368,19 @@ if __name__ == "__main__":
         audio_in(context)
         asr(context)
 
+        response_generator(context)
+
         for feature_extractor in feature_extractors:
             feature_extractor(context)
 
-        entrainment_strategy(context)
+        context.begin_user_transform()
 
         for transformer in transformers:
             transformer(context)
 
-        response_generator(context)
+        entrainment_strategy(context)
+
+        for transformer in entrainment_transformers:
+            transformer(context)
+
         tts(context)

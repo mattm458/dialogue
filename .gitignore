@@ -1,3 +1,4 @@
+.vector_cache
 *.ckpt
 
 # Byte-compiled / optimized / DLL files

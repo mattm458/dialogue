@@ -40,4 +40,4 @@ class RateFeatureExtractor:
             / context.get_latest_feature_value("duration")
         )
 
-        context.add_feature_value("rate", rate)
+        context.append_user_feature_value("rate", rate)

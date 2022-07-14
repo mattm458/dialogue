@@ -14,4 +14,4 @@ class DummyFeatureExtractor:
             fuzz_amount = (random.random() * self.fuzz * 2) - self.fuzz
 
             feature_fuzzed = feature_value + (feature_value * fuzz_amount)
-            context.add_feature_value(feature_key, feature_fuzzed)
+            context.append_user_feature_value(feature_key, feature_fuzzed)

@@ -143,4 +143,4 @@ class PraatFeatureExtractor:
             sound = parselmouth.Sound(tmp.name)
 
         for feature, value in get_features(sound).items():
-            context.add_feature_value(feature, value)
+            context.append_user_feature_value(feature, value)

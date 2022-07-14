@@ -1,11 +1,18 @@
+import numpy as np
+
+
 class Context:
     def __init__(self):
         self.user_audios = []
         self.user_texts = []
         self.response_texts = []
         self.user_duration = []
-        self.features = {}
-        self.entrained_features={}
+
+        self.user_features = {}
+        self.transformed_user_features = {}
+        self.response_features = {}
+
+        self.partner_entrained_features = {}
 
     def add_user_audio(self, user_audio):
         self.user_audios.append(user_audio)
@@ -18,21 +25,30 @@ class Context:
 
     def add_user_duration(self, user_duration):
         self.user_duration.append(user_duration)
-    
-    def add_feature_value(self, feature, value):
-        if feature not in self.features:
-            self.features[feature] = []
-        
-        self.features[feature].append(value)
 
-    def add_entrained_feature_value(self, feature, value):
-        self.entrained_features[feature]=value
+    def append_user_feature_value(self, feature, value):
+        if feature not in self.user_features:
+            self.user_features[feature] = []
 
-    def update_entrained_feature_value(self, feature, value):
-        self.entrained_features[feature] = value
+        self.user_features[feature].append(value)
+
+    def begin_user_transform(self):
+        for feature in self.user_features.keys():
+            self.transformed_user_features[feature] = np.array(
+                self.user_features[feature]
+            )
     
-    def remove_entrained_feature_value(self, feature):
-        del self.entrained_features[feature]
+    def get_transformed_user_feature_keys(self):
+        return list(self.transformed_user_features.keys())
+
+    def get_transformed_user_feature_values(self, feature):
+        return self.transformed_user_features[feature]
+
+    def set_transformed_user_feature_values(self, feature, values):
+        self.transformed_user_features[feature] = values
+
+    def set_partner_entrained_feature_value(self, feature, value):
+        self.partner_entrained_features[feature] = value
 
     def get_latest_user_audio(self):
         return self.user_audios[-1]
@@ -44,25 +60,25 @@ class Context:
         return self.response_texts[-1]
 
     def get_feature_keys(self):
-        return list(self.features.keys())
+        return list(self.user_features.keys())
 
     def get_entrained_feature_keys(self):
-        return list(self.entrained_features.keys())
+        return list(self.partner_entrained_features.keys())
 
     def get_latest_feature_value(self, feature):
-        return self.features[feature][-1]
-    
-    def get_feature_values(self, feature):
-        return self.features[feature]
+        return self.user_features[feature][-1]
+
+    def get_user_feature_values(self, feature):
+        return self.user_features[feature]
 
     def get_entrained_feature_value(self, feature):
-        return self.entrained_features[feature]
+        return self.partner_entrained_features[feature]
 
     def has_feature_value(self, feature):
-        return feature in self.features    
+        return feature in self.user_features
 
     def has_entrained_feature_value(self, feature):
-        return feature in self.entrained_features
+        return feature in self.partner_entrained_features
 
     def get_text_history(self):
         hist = []
